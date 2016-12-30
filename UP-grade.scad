@@ -5,29 +5,36 @@
 // Written for OpenScad by Bruno Herfst 2016
 // http://www.openscad.org
 
+// NOTE: If I added a 0 to a variable it is it doesn't show in the custumizer
+
 // Roll Spec
 rollWidth = 70;
 
 // Holder spec
 holderDepth        = 10;
-holderLever        = 15;
+holderLever        = 0;
 bevelWidth         = 5;
-hLipTickness       = 3;
-hDiameter          = 30;
-backWallThickness  = 5;
-frontWallThickness = 3;
+lipTickness        = 3;
+holderDiameter     = 30;
+backWallThickness  = 5+0;
+frontWallThickness = 3+0;
 
 // Printer Spec
-pHoleWidth = 22; // 24 Actual
-pHoleHeiht = 10; // 12 Actual
-pWall      = 2;  //  1 Actual
+pHoleWidth = 22+0; // 24 Actual
+pHoleHeiht = 10+0; // 12 Actual
+pWall      = 2 +0;  //  1 Actual
 
 // Short cuts
 hDepth   = holderDepth/2;
 rWidth   = rollWidth + bevelWidth;
+// Material Saver
+ms_Height = ((holderDiameter+holderDepth)/100)*25;
+ms_Offset = ((holderDiameter+holderDepth)/100)*25;
 // Backwall
-bwWidth  = hDiameter + holderDepth;
-bwHeight = hDiameter + (holderDepth*2) + holderLever;
+bwWidth  = holderDiameter + holderDepth;
+bwHeight = holderDiameter + (holderDepth*2) + holderLever;
+
+$fn = 100;
 
 module prism(l, w, h){
     polyhedron(
@@ -36,12 +43,14 @@ module prism(l, w, h){
     );
 }
 
+difference() {
+// Create holder
 union() { 
     // Create lip
-    translate([-(pHoleWidth/2),-(pWall+hLipTickness),0]) {
-        cube([pHoleWidth,hLipTickness,pHoleHeiht]);
-        translate([0,0,pHoleHeiht-hLipTickness]) {
-            cube([pHoleWidth,hLipTickness+pWall,hLipTickness]);
+    translate([-(pHoleWidth/2),-(pWall+lipTickness),0]) {
+        cube([pHoleWidth,lipTickness,pHoleHeiht]);
+        translate([0,0,pHoleHeiht-lipTickness]) {
+            cube([pHoleWidth,lipTickness+pWall,lipTickness]);
         }
     }
 
@@ -49,20 +58,37 @@ union() {
     translate([-bwWidth/2,0,-(bwHeight-pHoleHeiht)+hDepth]){
         cube([bwWidth,backWallThickness,bwHeight]);
     }
-
+    
+    // Bevel
+    translate([0,backWallThickness+(bevelWidth/2),pHoleHeiht-hDepth-(holderDiameter/2)]){
+        rotate([-90,0,0])
+        cylinder(  bevelWidth, d1=holderDiameter+holderDepth, d2=holderDiameter, center=true);
+    }
+    
     // Create holder
-    translate([0,rWidth/2+backWallThickness,pHoleHeiht-hDepth-(hDiameter/2)]){
+    translate([0,rWidth/2+backWallThickness,pHoleHeiht-hDepth-(holderDiameter/2)]){
         rotate([90,0,0])
-        cylinder(  rWidth, d=hDiameter, center=true);
+        cylinder(  rWidth, d=holderDiameter, center=true);
     }
 
     // Create holder finish
-    translate([0,rWidth+backWallThickness+(bevelWidth/2)-bevelWidth,pHoleHeiht-hDepth-(hDiameter/2)]){
+    // Bevel
+    translate([0,rWidth+backWallThickness-(bevelWidth/2),pHoleHeiht-hDepth-(holderDiameter/2)]){
         rotate([90,0,0])
-        cylinder(  bevelWidth, d1=hDiameter+holderDepth, d2=hDiameter, center=true);
+        cylinder(  bevelWidth, d1=holderDiameter+holderDepth, d2=holderDiameter, center=true);
     }
-    translate([0,rWidth+backWallThickness,pHoleHeiht-hDepth-(hDiameter/2)]){
+    translate([0,rWidth+backWallThickness+frontWallThickness-(frontWallThickness/2),pHoleHeiht-hDepth-(holderDiameter/2)]){
         rotate([90,0,0])
-        cylinder(  frontWallThickness, d=hDiameter+holderDepth, center=true);
+        cylinder(  frontWallThickness, d=holderDiameter+holderDepth, center=true);
     }
+}
+// Create material saver
+union() {
+    translate([-bwWidth/2,backWallThickness,pHoleHeiht-hDepth-holderDiameter+ms_Offset]){
+        prism(bwWidth, rWidth+frontWallThickness+3, ms_Height);
+    }
+    translate([-bwWidth/2,backWallThickness,pHoleHeiht-hDepth-holderDiameter-bwHeight+ms_Offset]){
+        cube([bwWidth, rWidth+frontWallThickness+3, bwHeight]);
+    }
+}
 }
